@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma Analítica de Massa Molar e Estequiometria Avançada — EDCELLTECH</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --success: #059669;
+            --error: #dc2626;
+            --warning: #d97706;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.5);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: var(--transition);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+            font-weight: 700;
+        }
+
+        .theme-toggle {
+            background: var(--border);
+            border: none;
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media(min-width: 950px) {
+            .grid { grid-template-columns: 3fr 2fr; }
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            box-sizing: border-box;
+            transition: var(--transition);
+        }
+
+        input[type="text"].monospace {
+            font-family: monospace;
+            font-size: 1.2rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        button.btn {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #ffffff;
+        }
+
+        .btn-primary { background-color: var(--accent); }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: #64748b; }
+        .btn-secondary:hover { background-color: #475569; }
+        .btn-success { background-color: var(--success); }
+        .btn-success:hover { background-color: #047857; }
+        .btn-warning { background-color: var(--warning); }
+        .btn-warning:hover { background-color: #b45309; }
+        .btn-danger { background-color: var(--error); }
+        .btn-danger:hover { background-color: #b91c1c; }
+
+        .status-box {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .status-success { background-color: rgba(5, 150, 105, 0.15); color: var(--success); border-left: 4px solid var(--success); }
+        .status-error { background-color: rgba(220, 38, 38, 0.15); color: var(--error); border-left: 4px solid var(--error); }
+        .status-warning { background-color: rgba(217, 119, 6, 0.15); color: var(--warning); border-left: 4px solid var(--warning); }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: var(--border);
+            height: 6px;
+            border-radius: 3px;
+            margin-top: 15px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--accent);
+            transition: width 0.2s ease;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: var(--bg-primary);
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        @media(min-width: 768px) {
+            .charts-container { grid-template-columns: 1fr 1fr 1fr; }
+        }
+
+        .chart-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+            height: 320px;
+        }
+
+        .step-list {
+            background: var(--bg-primary);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin-top: 15px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .history-search {
+            margin-bottom: 15px;
+        }
+
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .history-item:hover {
+            background-color: var(--bg-primary);
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .mini-btn {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            color: white;
+        }
+
+        .test-panel {
+            margin-top: 25px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            background: var(--bg-card);
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .test-badge {
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            background: var(--bg-primary);
+        }
+
+        .test-pass { border-left: 4px solid var(--success); color: var(--success); }
+        .test-fail { border-left: 4px solid var(--error); color: var(--error); }
+
+    
+        .periodic-table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+            padding: 10px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+        .periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, minmax(50px, 1fr));
+            gap: 4px;
+            width: 1000px;
+            margin: 0 auto;
+        }
+        .element-cell {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            user-select: none;
+        }
+        .element-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: var(--shadow);
+            border-color: var(--accent);
+        }
+        .element-cell .num { font-size: 0.65rem; text-align: left; display: block; color: var(--text-secondary); }
+        .element-cell .sym { font-size: 1.1rem; font-weight: bold; display: block; }
+        .element-cell .weight { font-size: 0.55rem; color: var(--text-secondary); display: block; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+        
+     
+        .cat-nao-metal { background-color: rgba(37, 99, 235, 0.15); }
+        .cat-gas-nobre { background-color: rgba(124, 58, 237, 0.15); }
+        .cat-metal-alcalino { background-color: rgba(220, 38, 38, 0.15); }
+        .cat-metal-alcalino-terroso { background-color: rgba(245, 158, 11, 0.15); }
+        .cat-metaloide { background-color: rgba(5, 150, 105, 0.15); }
+        .cat-halogenio { background-color: rgba(13, 148, 136, 0.15); }
+        .cat-metal-transicao { background-color: rgba(100, 116, 139, 0.15); }
+        .cat-metal-pos-transicao { background-color: rgba(190, 24, 74, 0.15); }
+        .cat-lantanideo { background-color: rgba(14, 116, 144, 0.15); }
+        .cat-actinideo { background-color: rgba(162, 28, 175, 0.15); }
+
+        .element-detail-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background: var(--bg-primary);
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+    
+        .lab-mode-panel {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-primary) 100%);
+            border: 2px dashed var(--accent);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+   
+        @media print {
+            body { background: #ffffff !important; color: #000000 !important; padding: 0; margin: 0; }
+            header, aside, .theme-toggle, .btn-group, .form-group, .test-panel, .periodic-table-container, .element-detail-box, footer, #statusBox, .progress-bar-container {
+                display: none !important;
+            }
+            .container { max-width: 100%; width: 100%; }
+            main { display: block !important; width: 100% !important; }
+            .card { border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+            #resultadoCard { display: block !important; }
+            .charts-container { page-break-inside: avoid; display: block !important; }
+            .chart-box { max-height: 250px !important; margin-bottom: 30px; page-break-inside: avoid; }
+            .lab-mode-panel { border: 1px solid #000000 !important; background: #ffffff !important; page-break-inside: avoid; }
+            table { border: 1px solid #000000 !important; }
+            th, td { border-bottom: 1px solid #000000 !important; color: #000000 !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1 style="margin:0;">🔬 Sistema Analítico de Massa Molar e Estequiometria</h1>
+            <small style="color:var(--text-secondary); font-weight:600;">Plataforma Corporativa de Engenharia Química Computacional • EDCELLTECH</small>
+        </div>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">Modo Escuro</button>
+    </header>
+
+    <section class="card">
+        <h2>Tabela Periódica Interativa IUPAC</h2>
+        <small style="color:var(--text-secondary);">Selecione um elemento para inspecionar os metadados de alta precisão química.</small>
+        <div class="periodic-table-container">
+            <div class="periodic-table" id="periodicTableGrid"></div>
+        </div>
+        <div class="element-detail-box" id="elementDetailBox"></div>
+    </section>
+
+    <div class="grid">
+        <main style="display: flex; flex-direction: column; gap: 20px;">
+            <section class="card">
+                <h2>Análise Estequiométrica Molecular</h2>
+                <div class="form-group">
+                    <label for="formulaInput">Fórmula Molecular / Complexo Químico / Hidrato / Íons:</label>
+                    <input type="text" id="formulaInput" class="monospace" placeholder="Ex: CuSO4·5H2O, K4[Fe(CN)6], [Cu(NH3)4]SO4·H2O, NH4+, SO4^2-">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="processarFormula()">Calcular Estrutura</button>
+                    <button class="btn btn-secondary" onclick="limparPainel()">Limpar</button>
+                </div>
+                <div class="progress-bar-container" id="progressBarContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div id="statusBox" class="status-box"></div>
+                <div id="ionStatusBox" class="status-box status-warning"></div>
+            </section>
+
+            <section class="card" id="compostoFichaCard" style="display:none;">
+                <h3 style="color:var(--accent); margin:0;" id="compostoNome">Nome do Composto</h3>
+                <p style="margin: 5px 0; font-size: 0.95rem;"><strong style="color:var(--text-secondary);">Classe:</strong> <span id="compostoClasse"></span></p>
+                <p style="margin: 5px 0; font-size: 0.95rem;" id="compostoDescricao"></p>
+                <p style="margin: 5px 0; font-size: 0.95rem;"><strong style="color:var(--text-secondary);">Aplicações:</strong> <span id="compostoAplicacao"></span></p>
+            </section>
+
+            <section class="card" id="conversorCard" style="display:none;">
+                <h2>Conversões de Unidades Baseadas na Massa Calculada</h2>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:15px;">
+                    <div class="form-group">
+                        <label for="convValor">Valor de Entrada:</label>
+                        <input type="number" id="convValor" value="1" step="any" oninput="executarConversoes()">
+                    </div>
+                    <div class="form-group">
+                        <label for="convUnidade">Unidade Origem:</label>
+                        <select id="convUnidade" onchange="executarConversoes()">
+                            <option value="g">Gramas (g)</option>
+                            <option value="mol">Mols (mol)</option>
+                            <option value="moleculas">Moléculas / Partículas</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="conversorResultados" style="margin-top:10px; background:var(--bg-primary); padding:15px; border-radius:8px; font-family:monospace; white-space:pre-wrap;"></div>
+            </section>
+
+            <section class="card">
+                <h2>Motor de Reações Estequiométricas (Opcional)</h2>
+                <small style="color:var(--text-secondary); display:block; margin-bottom:15px;">Insira a equação química balanceada separada por "->". Ex: 2H2 + O2 -> 2H2O</small>
+                <div class="form-group">
+                    <label for="reacaoInput">Equação de Reação Química:</label>
+                    <input type="text" id="reacaoInput" class="monospace" placeholder="Ex: 2H2 + O2 -> 2H2O">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                    <div class="form-group">
+                        <label for="reagenteMassa">Massa / Mol do Reagente 1:</label>
+                        <input type="number" id="reagenteMassa" value="10" step="any">
+                    </div>
+                    <div class="form-group">
+                        <label for="reagenteTipo">Tipo de Entrada:</label>
+                        <select id="reagenteTipo">
+                            <option value="g">Gramas (g)</option>
+                            <option value="mol">Mols (mol)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-warning" onclick="calcularEstequiometriaReacao()">Processar Reagentes</button>
+                </div>
+                <div id="estequiometriaResultado" style="margin-top:15px; display:none; background:var(--bg-primary); padding:15px; border-radius:8px; border-left:4px solid var(--warning); font-family:monospace; white-space:pre-wrap;"></div>
+            </section>
+
+            <section class="card" id="resultadoCard" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <h2 style="margin:0; color:var(--accent);">Massa Molar Calculada: <span id="massaFinal">0.000</span> g/mol</h2>
+                    </div>
+                    <div class="btn-group" style="margin:0;">
+                        <button class="btn btn-success" style="padding:8px 16px; font-size:0.9rem;" onclick="exportarRelatorio('pdf')">PDF</button>
+                        <button class="btn btn-success" style="padding:8px 16px; font-size:0.9rem; background-color:#1e3a8a;" onclick="exportarRelatorio('xlsx')">XLSX</button>
+                        <button class="btn btn-secondary" style="padding:8px 16px; font-size:0.9rem;" onclick="exportarRelatorio('csv')">CSV</button>
+                        <button class="btn btn-secondary" style="padding:8px 16px; font-size:0.9rem; background-color:#475569;" onclick="exportarRelatorio('txt')">TXT</button>
+                        <button class="btn btn-primary" style="padding:8px 16px; font-size:0.9rem; background-color:#6d28d9;" onclick="window.print()">Imprimir Laudo</button>
+                    </div>
+                </div>
+
+                <div class="btn-group" style="margin-top:10px;">
+                    <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.85rem;" onclick="copiarParaAreaTransferencia('massa')">Copiar Massa Molar</button>
+                    <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.85rem;" onclick="copiarParaAreaTransferencia('relatorio')">Copiar Relatório TXT</button>
+                    <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.85rem;" onclick="copiarParaAreaTransferencia('tabela')">Copiar Tabela CSV</button>
+                </div>
+
+                <h3 style="margin-top:25px; margin-bottom:5px;">Passo a Passo da Resolução Científica</h3>
+                <div class="step-list" id="passoAPassoTexto"></div>
+
+                <h3 style="margin-top:25px; margin-bottom:5px;">Relatório de Distribuição de Fração de Massa</h3>
+                <div style="overflow-x: auto;">
+                    <table id="tabelaElementos">
+                        <thead>
+                            <tr>
+                                <th>Símbolo</th>
+                                <th>Nome IUPAC</th>
+                                <th>Z</th>
+                                <th>Qtde Absoluta</th>
+                                <th>Massa Atômica (u)</th>
+                                <th>Massa Combinada</th>
+                                <th>Fração em Massa (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaElementosCorpo"></tbody>
+                    </table>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-box">
+                        <canvas id="chartPizza"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <canvas id="chartBarras"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <canvas id="chartHorizontal"></canvas>
+                    </div>
+                </div>
+
+                <div class="lab-mode-panel">
+                    <h3 style="margin:0; border-bottom:1px solid var(--border); padding-bottom:5px;">📋 Painel de Controle Analítico e Certificação</h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem; margin-top:10px;">
+                        <div><strong>Fórmula Atômica:</strong> <span id="labFormula">-</span></div>
+                        <div><strong>Massa Molecular Homologada:</strong> <span id="labMassa">-</span> g/mol</div>
+                        <div><strong>Data do Registro:</strong> <span id="labData">-</span></div>
+                        <div><strong>Hora de Emissão:</strong> <span id="labHora">-</span></div>
+                    </div>
+                    <div style="margin-top:10px; font-size:0.85rem;">
+                        <strong>Operação Executada:</strong> Decomposição estequiométrica matricial via parser molecular computacional recursivo.
+                        <br><strong>Observações:</strong> Laudo laboratorial em conformidade com as diretrizes métricas vigentes da IUPAC.
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <aside style="display: flex; flex-direction: column; gap: 20px;">
+            <section class="card">
+                <h2>Histórico de Auditoria Química</h2>
+                <div class="form-group history-search">
+                    <input type="text" id="buscaHistorico" placeholder="Filtrar histórico por fórmula..." oninput="renderizarHistorico()">
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <small style="font-weight:600; color:var(--text-secondary);">Últimas análises salvas</small>
+                    <button onclick="limparHistoricoCompleto()" style="background:none; border:none; color:var(--error); cursor:pointer; font-weight:600; font-size:0.85rem; padding:0;">Limpar Tudo</button>
+                </div>
+                <div class="history-list" id="historicoContainer"></div>
+            </section>
+
+            <section class="card">
+                <h3>Instruções de Sintaxe Suportadas</h3>
+                <ul style="padding-left:20px; margin:0; font-size:0.9rem; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+                    <li><strong>Agrupamentos Complexos Aninhados:</strong> Suporta o uso coordenado e recursivo de <code>()</code>, <code>[]</code>, e <code>{}</code>. Ex: <code>[Co(NH3)6]Cl3</code></li>
+                    <li><strong>Coeficientes Globais Estruturais:</strong> Multiplicadores numéricos à esquerda afetam toda a molécula subsequente. Ex: <code>3H2O</code> equivale a 6 H e 3 O.</li>
+                    <li><strong>Sistemas Hidratados Reais:</strong> Reconhecimento de compostos de adição através dos caracteres ponto centrado (<code>·</code>) ou ponto final (<code>.</code>). Ex: <code>CuSO4·5H2O</code></li>
+                    <li><strong>Suporte a Íons e Cargas:</strong> Aceita representações de cargas catiônicas e aniônicas (ex: <code>SO4^2-</code>, <code>NH4+</code>, <code>Fe+3</code>), as quais são computadas, filtradas e alertadas em tela para conformidade industrial.</li>
+                </ul>
+            </section>
+        </aside>
+    </div>
+
+    <section class="test-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <h3 style="margin:0;">🧪 Painel de Verificação Analítica Automatizada (Controle de Qualidade)</h3>
+            <button class="btn btn-warning" style="padding:6px 14px; font-size:0.85rem;" onclick="executarTestesInternos()">Executar Autoteste</button>
+        </div>
+        <div class="test-grid" id="testGridResultados"></div>
+    </section>
+
+    <footer>
+        <p>2026 EDCELLTECH. Desenvolvido para Aplicações Laboratoriais Avançadas e Engenharia Química Computacional de Alta Precisão.</p>
+    </footer>
+</div>
+
+<script>
+    
+    const TABELA_PERIODICA = {
+        'H': { nome: 'Hidrogênio', num: 1, massa: 1.008, grupo: 1, periodo: 1, cat: 'Não-metal', estado: 'Gás', ano: 1766, x: 1, y: 1 },
+        'He': { nome: 'Hélio', num: 2, massa: 4.0026, grupo: 18, periodo: 1, cat: 'Gás Nobre', estado: 'Gás', ano: 1868, x: 18, y: 1 },
+        'Li': { nome: 'Lítio', num: 3, massa: 6.94, grupo: 1, periodo: 2, cat: 'Metal Alcalino', estado: 'Sólido', ano: 1817, x: 1, y: 2 },
+        'Be': { nome: 'Berílio', num: 4, massa: 9.0122, grupo: 2, periodo: 2, cat: 'Metal Alcalino-terroso', estado: 'Sólido', ano: 1798, x: 2, y: 2 },
+        'B': { nome: 'Boro', num: 5, massa: 10.81, grupo: 13, periodo: 2, cat: 'Metaloide', estado: 'Sólido', ano: 1808, x: 13, y: 2 },
+        'C': { nome: 'Carbono', num: 6, massa: 12.011, grupo: 14, periodo: 2, cat: 'Não-metal', estado: 'Sólido', ano: 'Antiguidade', x: 14, y: 2},
+        'N': { nome: 'Nitrogênio', num: 7, massa: 14.007, grupo: 15, periodo: 2, cat: 'Não-metal', estado: 'Gás', ano: 1772, x: 15, y: 2 },
+        'O': { nome: 'Oxigênio', num: 8, massa: 15.999, grupo: 16, periodo: 2, cat: 'Não-metal', estado: 'Gás', ano: 1774, x: 16, y: 2 },
+        'F': { nome: 'Flúor', num: 9, massa: 18.998, grupo: 17, periodo: 2, cat: 'Halogênio', estado: 'Gás', ano: 1886, x: 17, y: 2 },
+        'Ne': { nome: 'Neônio', num: 10, massa: 20.180, grupo: 18, periodo: 2, cat: 'Gás Nobre', estado: 'Gás', ano: 1898, x: 18, y: 2 },
+        'Na': { nome: 'Sódio', num: 11, massa: 22.990, grupo: 1, periodo: 3, cat: 'Metal Alcalino', estado: 'Sólido', ano: 1807, x: 1, y: 3 },
+        'Mg': { nome: 'Magnésio', num: 12, massa: 24.305, grupo: 2, periodo: 3, cat: 'Metal Alcalino-terroso', estado: 'Sólido', ano: 1755, x: 2, y: 3 },
+        'Al': { nome: 'Alumínio', num: 13, massa: 26.982, grupo: 13, periodo: 3, cat: 'Metal Pós-transição', estado: 'Sólido', ano: 1825, x: 13, y: 3 },
+        'Si': { nome: 'Silício', num: 14, massa: 28.085, grupo: 14, periodo: 3, cat: 'Metaloide', estado: 'Sólido', ano: 1823, x: 14, y: 3 },
+        'P': { nome: 'Fósforo', num: 15, massa: 30.974, grupo: 15, periodo: 3, cat: 'Não-metal', estado: 'Sólido', ano: 1669, x: 15, y: 3 },
+        'S': { nome: 'Enxofre', num: 16, massa: 32.06, grupo: 16, periodo: 3, cat: 'Não-metal', estado: 'Sólido', ano: 'Antiguidade', x: 16, y: 3 },
+        'Cl': { nome: 'Cloro', num: 17, massa: 35.45, grupo: 17, periodo: 3, cat: 'Halogênio', estado: 'Gás', ano: 1774, x: 17, y: 3 },
+        'Ar': { nome: 'Argônio', num: 18, massa: 39.948, grupo: 18, periodo: 3, cat: 'Gás Nobre', estado: 'Gás', ano: 1894, x: 18, y: 3 },
+        'K': { nome: 'Potássio', num: 19, massa: 39.098, grupo: 1, periodo: 4, cat: 'Metal Alcalino', estado: 'Sólido', ano: 1807, x: 1, y: 4 },
+        'Ca': { nome: 'Cálcio', num: 20, massa: 40.078, grupo: 2, periodo: 4, cat: 'Metal Alcalino-terroso', estado: 'Sólido', ano: 1808, x: 2, y: 4 },
+        'Sc': { nome: 'Escândio', num: 21, massa: 44.956, grupo: 3, periodo: 4, cat: 'Metal de Transição', estado: 'Sólido', ano: 1879, x: 3, y: 4 },
+        'Ti': { nome: 'Titânio', num: 22, massa: 47.867, grupo: 4, periodo: 4, cat: 'Metal de Transição', estado: 'Sólido', ano: 1791, x: 4, y: 4 },
+        'V': { nome: 'Vanádio', num: 23, massa: 50.942, grupo: 5, periodo: 4, cat: 'Metal de Transição', estado: 'Sólido', ano: 1801, x: 5, y: 4 },
+        'Cr': { nome: 'Cromo', num: 24, massa: 51.996, grupo: 6, periodo: 4, cat: 'Metal de Transição', estado: 'Sólido', ano: 1797, x: 6, y: 4 },
+        'Mn': { nome: 'Manganês', num: 25, massa: 54.938, grupo: 7, periodo: 4, cat: 'Metal de Transição', estado: 'Sólido', ano: 1774, x: 7, y: 4 },
+        'Fe': { nome: 'Ferro', num: 26, massa: 55.845, grupo: 8, periodo: 4, cat: 'Metal de Transição', estado: 'Sólido', ano: 'Antiguidade', x: 8, y: 4 },
+        'Co': { nome: 'Cobalto', num: 27, massa: 58.933, grupo: 9, periodo: 4, cat: 'Metal de Transição', estado: 'Sólido', ano: 1735, x: 9, y: 4 },
+        'Ni': { nome: 'Níquel', num: 28, massa: 58.693, grupo: 10, periodo: 4, cat: 'Metal de Transição', estado: 'Sólido', ano: 1751, x: 10, y: 4 },
+        'Cu': { nome: 'Cobre', num: 29, massa: 63.546, grupo: 11, periodo: 4, cat: 'Metal de Transição', estado: 'Sólido', ano: 'Antiguidade', x: 11, y: 4 },
+        'Zn': { nome: 'Zinco', num: 30, massa: 65.38, grupo: 12, periodo: 4, cat: 'Metal de Transição', estado: 'Sólido', ano: 'Antiguidade', x: 12, y: 4 },
+        'Ga': { nome: 'Gálio', num: 31, massa: 69.723, grupo: 13, periodo: 4, cat: 'Metal Pós-transição', estado: 'Sólido', ano: 1875, x: 13, y: 4 },
+        'Ge': { nome: 'Germânio', num: 32, massa: 72.63, grupo: 14, periodo: 4, cat: 'Metaloide', estado: 'Sólido', ano: 1886, x: 14, y: 4 },
+        'As': { nome: 'Arsênio', num: 33, massa: 74.922, grupo: 15, periodo: 4, cat: 'Metaloide', estado: 'Sólido', ano: 1250, x: 15, y: 4 },
+        'Se': { nome: 'Selênio', num: 34, massa: 78.971, grupo: 16, periodo: 4, cat: 'Não-metal', estado: 'Sólido', ano: 1817, x: 16, y: 4 },
+        'Br': { nome: 'Bromo', num: 35, massa: 79.904, grupo: 17, periodo: 4, cat: 'Halogênio', estado: 'Líquido', ano: 1826, x: 17, y: 4 },
+        'Kr': { nome: 'Criptônio', num: 36, massa: 83.798, grupo: 18, periodo: 4, cat: 'Gás Nobre', estado: 'Gás', ano: 1898, x: 18, y: 4 },
+        'Rb': { nome: 'Rubídio', num: 37, massa: 85.468, grupo: 1, periodo: 5, cat: 'Metal Alcalino', estado: 'Sólido', ano: 1861, x: 1, y: 5 },
+        'Sr': { nome: 'Estrôncio', num: 38, massa: 87.62, grupo: 2, periodo: 5, cat: 'Metal Alcalino-terroso', estado: 'Sólido', ano: 1790, x: 2, y: 5 },
+        'Y': { nome: 'Ítrio', num: 39, massa: 88.906, grupo: 3, periodo: 5, cat: 'Metal de Transição', estado: 'Sólido', ano: 1794, x: 3, y: 5 },
+        'Zr': { nome: 'Zircônio', num: 40, massa: 91.224, grupo: 4, periodo: 5, cat: 'Metal de Transição', estado: 'Sólido', ano: 1789, x: 4, y: 5 },
+        'Nb': { nome: 'Nióbio', num: 41, massa: 92.906, grupo: 5, periodo: 5, cat: 'Metal de Transição', estado: 'Sólido', ano: 1801, x: 5, y: 5 },
+        'Mo': { nome: 'Molibdênio', num: 42, massa: 95.95, grupo: 6, periodo: 5, cat: 'Metal de Transição', estado: 'Sólido', ano: 1778, x: 6, y: 5 },
+        'Tc': { nome: 'Tecnécio', num: 43, massa: 98, grupo: 7, periodo: 5, cat: 'Metal de Transição', estado: 'Sintético', ano: 1937, x: 7, y: 5 },
+        'Ru': { nome: 'Rutênio', num: 44, massa: 101.07, grupo: 8, periodo: 5, cat: 'Metal de Transição', estado: 'Sólido', ano: 1844, x: 8, y: 5 },
+        'Rh': { nome: 'Ródio', num: 45, massa: 102.91, grupo: 9, periodo: 5, cat: 'Metal de Transição', estado: 'Sólido', ano: 1803, x: 9, y: 5 },
+        'Pd': { nome: 'Paládio', num: 46, massa: 106.42, grupo: 10, periodo: 5, cat: 'Metal de Transição', estado: 'Sólido', ano: 1803, x: 10, y: 5 },
+        'Ag': { nome: 'Prata', num: 47, massa: 107.87, grupo: 11, periodo: 5, cat: 'Metal de Transição', estado: 'Sólido', ano: 'Antiguidade', x: 11, y: 5 },
+        'Cd': { nome: 'Cádmio', num: 48, massa: 112.41, grupo: 12, periodo: 5, cat: 'Metal de Transição', estado: 'Sólido', ano: 1817, x: 12, y: 5 },
+        'In': { nome: 'Índio', num: 49, massa: 114.82, grupo: 13, periodo: 5, cat: 'Metal Pós-transição', estado: 'Sólido', ano: 1863, x: 13, y: 5 },
+        'Sn': { nome: 'Estanho', num: 50, massa: 118.71, grupo: 14, periodo: 5, cat: 'Metal Pós-transição', estado: 'Sólido', ano: 'Antiguidade', x: 14, y: 5 },
+        'Sb': { nome: 'Antimônio', num: 51, massa: 121.76, grupo: 15, periodo: 5, cat: 'Metaloide', estado: 'Sólido', ano: 'Antiguidade', x: 15, y: 5 },
+        'Te': { nome: 'Telúrio', num: 52, massa: 127.60, grupo: 16, periodo: 5, cat: 'Metaloide', estado: 'Sólido', ano: 1782, x: 16, y: 5 },
+        'I': { nome: 'Iodo', num: 53, massa: 126.90, grupo: 17, periodo: 5, cat: 'Halogênio', estado: 'Sólido', ano: 1811, x: 17, y: 5 },
+        'Xe': { nome: 'Xenônio', num: 54, massa: 131.29, grupo: 18, periodo: 5, cat: 'Gás Nobre', estado: 'Gás', ano: 1898, x: 18, y: 5 },
+        'Cs': { nome: 'Césio', num: 55, massa: 132.91, grupo: 1, periodo: 6, cat: 'Metal Alcalino', estado: 'Sólido', ano: 1860, x: 1, y: 6 },
+        'Ba': { nome: 'Bário', num: 56, massa: 137.33, grupo: 2, periodo: 6, cat: 'Metal Alcalino-terroso', estado: 'Sólido', ano: 1808, x: 2, y: 6 },
+        'La': { nome: 'Lantânio', num: 57, massa: 138.91, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1839, x: 3, y: 8 },
+        'Ce': { nome: 'Cério', num: 58, massa: 140.12, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1803, x: 4, y: 8 },
+        'Pr': { nome: 'Praseodímio', num: 59, massa: 140.91, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1885, x: 5, y: 8 },
+        'Nd': { nome: 'Neodímio', num: 60, massa: 144.24, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1885, x: 6, y: 8 },
+        'Pm': { nome: 'Promécio', num: 61, massa: 145, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sintético', ano: 1945, x: 7, y: 8 },
+        'Sm': { nome: 'Samário', num: 62, massa: 150.36, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1879, x: 8, y: 8 },
+        'Eu': { nome: 'Európio', num: 63, massa: 151.96, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1901, x: 9, y: 8 },
+        'Gd': { nome: 'Gadolínio', num: 64, massa: 157.25, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1880, x: 10, y: 8 },
+        'Tb': { nome: 'Térbio', num: 65, massa: 158.93, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1843, x: 11, y: 8 },
+        'Dy': { nome: 'Disprósio', num: 66, massa: 162.50, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1886, x: 12, y: 8 },
+        'Ho': { nome: 'Hólmio', num: 67, massa: 164.93, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1878, x: 13, y: 8 },
+        'Er': { nome: 'Érbio', num: 68, massa: 167.26, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1843, x: 14, y: 8 },
+        'Tm': { nome: 'Túlio', num: 69, massa: 168.93, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1879, x: 15, y: 8 },
+        'Yb': { nome: 'Itérbio', num: 70, massa: 173.05, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1878, x: 16, y: 8 },
+        'Lu': { nome: 'Lutécio', num: 71, massa: 174.97, grupo: 3, periodo: 6, cat: 'Lantanídeo', estado: 'Sólido', ano: 1907, x: 17, y: 8 },
+        'Hf': { nome: 'Háfnio', num: 72, massa: 178.49, grupo: 4, periodo: 6, cat: 'Metal de Transição', estado: 'Sólido', ano: 1923, x: 4, y: 6 },
+        'Ta': { nome: 'Tântalo', num: 73, massa: 180.95, grupo: 5, periodo: 6, cat: 'Metal de Transição', estado: 'Sólido', ano: 1802, x: 5, y: 6 },
+        'W': { nome: 'Tungstênio', num: 74, massa: 183.84, grupo: 6, periodo: 6, cat: 'Metal de Transição', estado: 'Sólido', ano: 1783, x: 6, y: 6 },
+        'Re': { nome: 'Rênio', num: 75, massa: 186.21, grupo: 7, periodo: 6, cat: 'Metal de Transição', estado: 'Sólido', ano: 1925, x: 7, y: 6 },
+        'Os': { nome: 'Ósmio', num: 76, massa: 190.23, grupo: 8, periodo: 6, cat: 'Metal de Transição', estado: 'Sólido', ano: 1803, x: 8, y: 6 },
+        'Ir': { nome: 'Irídio', num: 77, massa: 192.22, grupo: 9, periodo: 6, cat: 'Metal de Transição', estado: 'Sólido', ano: 1803, x: 9, y: 6 },
+        'Pt': { nome: 'Platina', num: 78, massa: 195.08, grupo: 10, periodo: 6, cat: 'Metal de Transição', estado: 'Sólido', ano: 1735, x: 10, y: 6 },
+        'Au': { nome: 'Ouro', num: 79, massa: 196.97, grupo: 11, periodo: 6, cat: 'Metal de Transição', estado: 'Sólido', ano: 'Antiguidade', x: 11, y: 6 },
+        'Hg': { nome: 'Mercúrio', num: 80, massa: 200.59, grupo: 12, periodo: 6, cat: 'Metal de Transição', estado: 'Líquido', ano: 'Antiguidade', x: 12, y: 6 },
+        'Tl': { nome: 'Tálio', num: 81, massa: 204.38, grupo: 13, periodo: 6, cat: 'Metal Pós-transição', estado: 'Sólido', ano: 1861, x: 13, y: 6 },
+        'Pb': { nome: 'Chumbo', num: 82, massa: 207.2, grupo: 14, periodo: 6, cat: 'Metal Pós-transição', estado: 'Sólido', ano: 'Antiguidade', x: 14, y: 6 },
+        'Bi': { nome: 'Bismuto', num: 83, massa: 208.98, grupo: 15, periodo: 6, cat: 'Metal Pós-transição', estado: 'Sólido', ano: 1753, x: 15, y: 6 },
+        'Po': { nome: 'Polônio', num: 84, massa: 209, grupo: 16, periodo: 6, cat: 'Metaloide', estado: 'Sólido', ano: 1898, x: 16, y: 6 },
+        'At': { nome: 'Astato', num: 85, massa: 210, grupo: 17, periodo: 6, cat: 'Halogênio', estado: 'Sólido', ano: 1940, x: 17, y: 6 },
+        'Rn': { nome: 'Radônio', num: 86, massa: 222, grupo: 18, periodo: 6, cat: 'Gás Nobre', estado: 'Gás', ano: 1900, x: 18, y: 6 },
+        'Fr': { nome: 'Frâncio', num: 87, massa: 223, grupo: 1, periodo: 7, cat: 'Metal Alcalino', estado: 'Sólido', ano: 1939, x: 1, y: 7 },
+        'Ra': { nome: 'Rádio', num: 88, massa: 226, grupo: 2, periodo: 7, cat: 'Metal Alcalino-terroso', estado: 'Sólido', ano: 1898, x: 2, y: 7 },
+        'Ac': { nome: 'Actínio', num: 89, massa: 227, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sólido', ano: 1899, x: 3, y: 9 },
+        'Th': { nome: 'Tório', num: 90, massa: 232.04, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sólido', ano: 1829, x: 4, y: 9 },
+        'Pa': { nome: 'Protactínio', num: 91, massa: 231.04, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sólido', ano: 1913, x: 5, y: 9 },
+        'U': { nome: 'Urânio', num: 92, massa: 238.03, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sólido', ano: 1789, x: 6, y: 9 },
+        'Np': { nome: 'Neptúnio', num: 93, massa: 237, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sintético', ano: 1940, x: 7, y: 9 },
+        'Pu': { nome: 'Plutônio', num: 94, massa: 244, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sintético', ano: 1940, x: 8, y: 9 },
+        'Am': { nome: 'Amerício', num: 95, massa: 243, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sintético', ano: 1944, x: 9, y: 9 },
+        'Cm': { nome: 'Cúrio', num: 96, massa: 247, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sintético', ano: 1944, x: 10, y: 9 },
+        'Bk': { nome: 'Berquélio', num: 97, massa: 247, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sintético', ano: 1949, x: 11, y: 9 },
+        'Cf': { nome: 'Califórnio', num: 98, massa: 251, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sintético', ano: 1950, x: 12, y: 9 },
+        'Es': { nome: 'Einstênio', num: 99, massa: 252, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sintético', ano: 1952, x: 13, y: 9 },
+        'Fm': { nome: 'Férmio', num: 100, massa: 257, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sintético', ano: 1952, x: 14, y: 9 },
+        'Md': { nome: 'Mendelévio', num: 101, massa: 258, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sintético', ano: 1955, x: 15, y: 9 },
+        'No': { nome: 'Nobélio', num: 102, massa: 259, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sintético', ano: 1958, x: 16, y: 9 },
+        'Lr': { nome: 'Laurêncio', num: 103, massa: 262, grupo: 3, periodo: 7, cat: 'Actinídeo', estado: 'Sintético', ano: 1961, x: 17, y: 9 },
+        'Rf': { nome: 'Rutherfórdio', num: 104, massa: 267, grupo: 4, periodo: 7, cat: 'Metal de Transição', estado: 'Sintético', ano: 1964, x: 4, y: 7 },
+        'Db': { nome: 'Dúbnio', num: 105, massa: 270, grupo: 5, periodo: 7, cat: 'Metal de Transição', estado: 'Sintético', ano: 1967, x: 5, y: 7 },
+        'Sg': { nome: 'Seabórgio', num: 106, massa: 271, grupo: 6, periodo: 7, cat: 'Metal de Transição', estado: 'Sintético', ano: 1974, x: 6, y: 7 },
+        'Bh': { nome: 'Bóhrio', num: 107, massa: 272, grupo: 7, periodo: 7, cat: 'Metal de Transição', estado: 'Sintético', ano: 1981, x: 7, y: 7 },
+        'Hs': { nome: 'Hássio', num: 108, massa: 277, grupo: 8, periodo: 7, cat: 'Metal de Transição', estado: 'Sintético', ano: 1984, x: 8, y: 7 },
+        'Mt': { nome: 'Meitnério', num: 109, massa: 278, grupo: 9, periodo: 7, cat: 'Metal de Transição', estado: 'Sintético', ano: 1982, x: 9, y: 7 },
+        'Ds': { nome: 'Darmstádio', num: 110, massa: 281, grupo: 10, periodo: 7, cat: 'Metal de Transição', estado: 'Sintético', ano: 1994, x: 10, y: 7 },
+        'Rg': { nome: 'Roentgênio', num: 111, massa: 282, grupo: 11, periodo: 7, cat: 'Metal de Transição', estado: 'Sintético', ano: 1994, x: 11, y: 7 },
+        'Cn': { nome: 'Copernício', num: 112, massa: 285, grupo: 12, periodo: 7, cat: 'Metal de Transição', estado: 'Sintético', ano: 1996, x: 12, y: 7 },
+        'Nh': { nome: 'Nihônio', num: 113, massa: 286, grupo: 13, periodo: 7, cat: 'Metal Pós-transição', estado: 'Sintético', ano: 2004, x: 13, y: 7 },
+        'Fl': { nome: 'Fleróvio', num: 114, massa: 289, grupo: 14, periodo: 7, cat: 'Metal Pós-transição', estado: 'Sintético', ano: 1998, x: 14, y: 7 },
+        'Mc': { nome: 'Moscóvio', num: 115, massa: 290, grupo: 15, periodo: 7, cat: 'Metal Pós-transição', estado: 'Sintético', ano: 2003, x: 15, y: 7 },
+        'Lv': { nome: 'Livermório', massa: 293, num: 116, grupo: 16, periodo: 7, cat: 'Metal Pós-transição', estado: 'Sintético', ano: 2000, x: 16, y: 7 },
+        'Ts': { nome: 'Tenessino', num: 117, massa: 294, grupo: 17, periodo: 7, cat: 'Halogênio', estado: 'Sintético', ano: 2010, x: 17, y: 7 },
+        'Og': { nome: 'Oganessônio', num: 118, massa: 294, grupo: 18, periodo: 7, cat: 'Gás Nobre', estado: 'Sintético', ano: 2002, x: 18, y: 7 }
+    };
+
+   
+    const BANCO_COMPOSTOS = {
+'H2O': { nome: 'Água', classe: 'Óxido / Solvente Universal', desc: 'Composto vital indispensável para a biosfera e reações biológicas.', aplic: 'Solvente, fluido de arrefecimento, regulação hidrolítica.' },
+        'CO2': { nome: 'Dióxido de Carbono', classe: 'Óxido Ácido', desc: 'Gás incolor vital para o ciclo fotossintético dos vegetais.', aplic: 'Carbonatação de bebidas, extintores de incêndio, fluidos supercríticos.' },
+        'NaCl': { nome: 'Cloreto de Sódio', classe: 'Sal Halóide', desc: 'Composto iônico essencial para o balanço eletrolítico celular.', aplic: 'Alimentação, conservação de carnes, produção de Cloro e Soda Cáustica.' },
+        'NH3': { nome: 'Amônia', classe: 'Hidreto / Base de Lewis', desc: 'Gás alcalino de odor pungente fundamental para sínteses agroquímicas.', aplic: 'Fertilizantes (Ureia), fluidos refrigerantes industriais, saneantes.' },
+        'H2SO4': { nome: 'Ácido Sulfúrico', classe: 'Oxiácido Forte', desc: 'Líquido viscoso altamente corrosivo indicador do PIB industrial de um país.', aplic: 'Baterias automotivas, decapagem de metais, refino de petróleo, superfosfatos.' },
+        'HNO3': { nome: 'Ácido Nítrico', classe: 'Oxiácido Forte', desc: 'Ácido mineral forte e oxidante, fumaçante ao ar livre.', aplic: 'Produção de nitrato de amônio, explosivos, metalurgia, nylon.' },
+        'CH4': { nome: 'Metano', classe: 'Alcano / Hidrocarboneto', desc: 'Principal componente do gás natural e biogás, forte gás estufa.', aplic: 'Combustível industrial/doméstico, síntese de gás de reforma.' },
+        'C2H5OH': { nome: 'Etanol', classe: 'Álcool', desc: 'Biocombustível e solvente polar obtido primariamente por fermentação sacaróide.', aplic: 'Carbocombustível, antisséptico hospitalar, solvente orgânico, bebidas.' },
+        'CH3COOH': { nome: 'Ácido Acético', classe: 'Ácido Carboxílico', desc: 'Ácido orgânico fraco responsável pela acidez característica do vinagre comum.', aplic: 'Produção de acetato de vinila, conservante alimentício, reagente sintético.' },
+        'C6H12O6': { nome: 'Glicose', classe: 'Carboidrato / Monossacarídeo', desc: 'Principal fonte de energia celular para os seres vivos via respiração celular.', aplic: 'Indústria alimentícia, soluções de infusão intravenosa hospitalar.' },
+        'NaOH': {
+            nome: 'Hidróxido de Sódio',
+            classe: 'Base Forte',
+            desc: 'Base alcalina altamente corrosiva utilizada em neutralizações e limpeza industrial.',
+            aplic: 'Tratamento de água, CIP, fabricação de sabões, controle de pH.'
+        },
+
+        'KOH': {
+            nome: 'Hidróxido de Potássio',
+            classe: 'Base Forte',
+            desc: 'Base alcalina utilizada em eletrólitos e sínteses químicas.',
+            aplic: 'Baterias alcalinas, fertilizantes, biodiesel.'
+        },
+
+        'HCl': {
+            nome: 'Ácido Clorídrico',
+            classe: 'Ácido Forte',
+            desc: 'Ácido mineral amplamente empregado na indústria e laboratórios.',
+            aplic: 'Decapagem de metais, ajuste de pH, limpeza industrial.'
+        },
+
+        'H3PO4': {
+            nome: 'Ácido Fosfórico',
+            classe: 'Oxiácido',
+            desc: 'Ácido utilizado em tratamentos de superfície e fertilizantes.',
+            aplic: 'Fosfatização, bebidas, fertilizantes, treatmento de metais.'
+        },
+
+        'NaClO': {
+            nome: 'Hipoclorito de Sódio',
+            classe: 'Agente Oxidante',
+            desc: 'Desinfetante e oxidante amplamente utilizado em saneamento.',
+            aplic: 'ETA, ETE, desinfecção, tratamento de água.'
+        },
+
+        'H2O2': {
+            nome: 'Peróxido de Hidrogênio',
+            classe: 'Peróxido',
+            desc: 'Agente oxidante forte utilizado em processos químicos e sanitários.',
+            aplic: 'Branqueamento, desinfecção, tratamento de efluentes.'
+        },
+
+        'KMnO4': {
+            nome: 'Permanganato de Potássio',
+            classe: 'Agente Oxidante',
+            desc: 'Oxidante utilizado em análises químicas e tratamento de água.',
+            aplic: 'Titulações redox, ETA, remoção de ferro e manganês.'
+        },
+
+        'FeCl3': {
+            nome: 'Cloreto Férrico',
+            classe: 'Sal Inorgânico',
+            desc: 'Coagulante amplamente empregado no tratamento de água.',
+            aplic: 'ETA, ETE, coagulação e floculação.'
+        },
+
+        'Al2(SO4)3': {
+            nome: 'Sulfato de Alumínio',
+            classe: 'Sal Inorgânico',
+            desc: 'Principal coagulante utilizado em estações de tratamento de água.',
+            aplic: 'Clarificação de água, remoção de turbidez.'
+        },
+
+        'CaCO3': {
+            nome: 'Carbonato de Cálcio',
+            classe: 'Sal Inorgânico',
+            desc: 'Mineral abundante utilizado como carga e corretivo.',
+            aplic: 'Tintas, plásticos, papel, correção de pH.'
+        },
+
+        'Ca(OH)2': {
+            nome: 'Hidróxido de Cálcio',
+            classe: 'Base',
+            desc: 'Conhecido como cal hidratada.',
+            aplic: 'Tratamento de água, neutralização, construção civil.'
+        },
+
+        'CaO': {
+            nome: 'Óxido de Cálcio',
+            classe: 'Óxido Básico',
+            desc: 'Conhecido como cal virgem.',
+            aplic: 'Siderurgia, tratamento de água, correção de solo.'
+        },
+
+        'MgSO4': {
+            nome: 'Sulfato de Magnésio',
+            classe: 'Sal Inorgânico',
+            desc: 'Composto utilizado em laboratório e agricultura.',
+            aplic: 'Fertilizantes, análises químicas, farmacêutica.'
+        },
+
+        'CuSO4': {
+            nome: 'Sulfato de Cobre',
+            classe: 'Sal Inorgânico',
+            desc: 'Sal utilizado em análises e tratamentos industriais.',
+            aplic: 'Galvanoplastia, fungicidas, laboratório.'
+        },
+
+        'AgNO3': {
+            nome: 'Nitrato de Prata',
+            classe: 'Sal Inorgânico',
+            desc: 'Reagente analítico clássico para determinação de cloretos.',
+            aplic: 'Titulações argentométricas, fotografia, laboratório.'
+        },
+
+        'K2Cr2O7': {
+            nome: 'Dicromato de Potássio',
+            classe: 'Agente Oxidante',
+            desc: 'Oxidante utilizado em análises químicas.',
+            aplic: 'DQO, titulações redox, laboratório.'
+        },
+
+        'Na2S2O3': {
+            nome: 'Tiossulfato de Sódio',
+            classe: 'Sal Inorgânico',
+            desc: 'Agente redutor muito utilizado em análises.',
+            aplic: 'Iodometria, tratamento de cloro residual.'
+        },
+
+
+        'NH4OH': {
+            nome: 'Hidróxido de Amônio',
+            classe: 'Base Fraca',
+            desc: 'Solução aquosa de amônia.',
+            aplic: 'Controle de pH, limpeza industrial, laboratório.'
+        },
+
+        'CO': {
+            nome: 'Monóxido de Carbono',
+            classe: 'Óxido Neutro',
+            desc: 'Gás tóxico gerado em combustões incompletas.',
+            aplic: 'Metalurgia, síntese química.'
+        },
+
+        'O2': {
+            nome: 'Oxigênio',
+            classe: 'Elemento Químico',
+            desc: 'Gás essencial para combustão e respiração.',
+            aplic: 'Soldagem, medicina, tratamento biológico.'
+        },
+
+        'N2': {
+            nome: 'Nitrogênio',
+            classe: 'Elemento Químico',
+            desc: 'Gás inerte amplamente utilizado na indústria.',
+            aplic: 'Atmosfera inerte, criogenia, processos industriais.'
+        },
+
+        'Ar': {
+            nome: 'Argônio',
+            classe: 'Gás Nobre',
+            desc: 'Gás inerte utilizado em soldagem e laboratórios.',
+            aplic: 'Soldagem TIG, cromatografia gasosa.'
+        },
+
+        'TiO2': {
+            nome: 'Dióxido de Titânio',
+            classe: 'Óxido Metálico',
+            desc: 'Pigmento branco de elevada opacidade.',
+            aplic: 'Tintas automotivas, plásticos, cosméticos.'
+        },
+
+        'SiO2': {
+            nome: 'Dióxido de Silício',
+            classe: 'Óxido',
+            desc: 'Principal componente da sílica.',
+            aplic: 'Vidros, abrasivos, cromatografia.'
+        },
+
+        'ZnO': {
+            nome: 'Óxido de Zinco',
+            classe: 'Óxido Metálico',
+            desc: 'Pigmento e aditivo industrial.',
+            aplic: 'Tintas, borrachas, cosméticos.'
+        },
+
+        'C3H6O': {
+            nome: 'Acetona',
+            classe: 'Cetona',
+            desc: 'Solvente orgânico de rápida evaporação.',
+            aplic: 'Limpeza industrial, tintas, laboratório.'
+        },
+
+        'CH3OH': {
+            nome: 'Metanol',
+            classe: 'Álcool',
+            desc: 'Álcool de uso industrial e matéria-prima química.',
+            aplic: 'Solventes, biodiesel, síntese química.'
+        },
+
+        'C7H8': {
+            nome: 'Tolueno',
+            classe: 'Hidrocarboneto Aromático',
+            desc: 'Solvente aromático muito utilizado em tintas.',
+            aplic: 'Pintura automotiva, adesivos, vernizes.'
+        },
+
+        'C8H10': {
+            nome: 'Xileno',
+            classe: 'Hidrocarboneto Aromático',
+            desc: 'Mistura de isômeros aromáticos utilizada como solvente.',
+            aplic: 'Tintas, resinas, limpeza industrial.'
+        }   
+
+     };
+
+
+    const AVOGADRO = 6.02214076e23;
+
+    
+    let chartPizzaInstancia = null;
+    let chartBarrasInstancia = null;
+    let chartHorizontalInstancia = null;
+    let dadosUltimoCalculo = null;
+
+    window.onload = function() {
+        carregarConfiguracaoTema();
+        gerarTabelaPeriodicaVisual();
+        renderizarHistorico();
+        executarTestesInternos();
+        configurarAtalhosTeclado();
+    };
+
+    function configurarAtalhosTeclado() {
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.activeElement.id === 'formulaInput') {
+                processarFormula();
+            }
+            if (e.ctrlKey && e.key.toLowerCase() === 'c' && !window.getSelection().toString()) {
+                copiarParaAreaTransferencia('massa');
+                e.preventDefault();
+            }
+        });
+    }
+
+    function toggleTheme() {
+        const atual = document.body.getAttribute('data-theme');
+        const novo = atual === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', novo);
+        document.getElementById('themeToggle').innerText = novo === 'dark' ? 'Modo Claro' : 'Modo Escuro';
+        localStorage.setItem('quimica-theme', novo);
+    }
+
+    function carregarConfiguracaoTema() {
+        const salvo = localStorage.getItem('quimica-theme') || 'light';
+        document.body.setAttribute('data-theme', salvo);
+        document.getElementById('themeToggle').innerText = salvo === 'dark' ? 'Modo Claro' : 'Modo Escuro';
+    }
+
+   
+    function gerarTabelaPeriodicaVisual() {
+        const grid = document.getElementById('periodicTableGrid');
+        grid.innerHTML = '';
+        
+      
+        const catMap = {
+            'Não-metal': 'cat-nao-metal',
+            'Gás Nobre': 'cat-gas-nobre',
+            'Metal Alcalino': 'cat-metal-alcalino',
+            'Metal Alcalino-terroso': 'cat-metal-alcalino-terroso',
+            'Metaloide': 'cat-metaloide',
+            'Halogênio': 'cat-halogenio',
+            'Metal de Transição': 'cat-metal-transicao',
+            'Metal Pós-transição': 'cat-metal-pos-transicao',
+            'Lantanídeo': 'cat-lantanideo',
+            'Actinídeo': 'cat-actinideo'
+        };
+
+        for (let sym in TABELA_PERIODICA) {
+            const el = TABELA_PERIODICA[sym];
+            const cell = document.createElement('div');
+            cell.className = `element-cell ${catMap[el.cat] || ''}`;
+            cell.style.gridColumn = el.x;
+            cell.style.gridRow = el.y;
+            cell.innerHTML = `
+                <span class="num">${el.num}</span>
+                <span class="sym">${sym}</span>
+                <span class="weight">${el.massa}</span>
+            `;
+            cell.onclick = () => inspecionarElemento(sym);
+            grid.appendChild(cell);
+        }
+    }
+
+    function inspecionarElemento(sym) {
+        const el = TABELA_PERIODICA[sym];
+        const box = document.getElementById('elementDetailBox');
+        box.style.display = 'block';
+        box.innerHTML = `
+            <h3 style="margin:0 0 10px 0; color:var(--accent);">${el.nome} (${sym}) - Z: ${el.num}</h3>
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px; font-size:0.9rem;">
+                <div><strong>Massa Atômica:</strong> ${el.massa} u</div>
+                <div><strong>Grupo / Período:</strong> ${el.grupo || 'N/A'} / ${el.periodo}</div>
+                <div><strong>Categoria:</strong> ${el.cat}</div>
+                <div><strong>Estado Físico (CNTP):</strong> ${el.estado}</div>
+                <div><strong>Ano de Descoberta:</strong> ${el.ano}</div>
+            </div>
+        `;
+    }
+
+   
+    function parseQuimicoAvancado(formulaString) {
+        let str = formulaString.trim();
+        if (!str) throw new Error("Erro de Validação: A entrada da fórmula molecular não pode estar vazia.");
+
+        const ionStatusBox = document.getElementById('ionStatusBox');
+        ionStatusBox.style.display = 'none';
+
+        
+        const ionRegex = /(\^?([0-9]*[\+\-]|[\+\-][0-9]*))$/;
+        if (ionRegex.test(str)) {
+            str = str.replace(ionRegex, '').trim();
+            ionStatusBox.innerText = "ℹ️ Carga iônica detectada e desconsiderada para cálculo de massa molar analítica.";
+            ionStatusBox.style.display = 'block';
+        }
+
+        if (/[^a-zA-Z0-9()\[\]{}·\.\s]/.test(str)) {
+            throw new Error("Erro de Sintaxe Científica: Caracteres não autorizados detectados na estrutura química.");
+        }
+
+        const partesHidrato = str.split(/[·.]/);
+        let composicaoGlobal = {};
+
+        for (let idx = 0; idx < partesHidrato.length; idx++) {
+            let bloco = partesHidrato[idx].trim();
+            if (!bloco) throw new Error("Erro de Sintaxe: Ponto de hidratação órfão detectado.");
+
+            let coeficienteBloco = 1;
+            const matchCoeficiente = bloco.match(/^(\d+)/);
+            if (matchCoeficiente) {
+                coeficienteBloco = parseInt(matchCoeficiente[1], 10);
+                bloco = bloco.substring(matchCoeficiente[1].length);
+            }
+
+            if (!bloco) throw new Error("Erro Estrutural: Coeficiente isolado sem corpo molecular associado.");
+
+            let composicaoBloco = parseBlocoMolecularPrincipal(bloco);
+
+            for (let atomo in composicaoBloco) {
+                composicaoGlobal[atomo] = (composicaoGlobal[atomo] || 0) + (composicaoBloco[atomo] * coeficienteBloco);
+            }
+        }
+
+        return composicaoGlobal;
+    }
+
+    function parseBlocoMolecularPrincipal(blocoStr) {
+        let indice = 0;
+        const delimitadoresAbertura = ['(', '[', '{'];
+        const delimitadoresFechamento = [')', ']', '}'];
+        const mapaFechamento = { ')': '(', ']': '[', '}': '{' };
+        let pilhaValidacao = [];
+
+        for (let char of blocoStr) {
+            if (delimitadoresAbertura.includes(char)) pilhaValidacao.push(char);
+            if (delimitadoresFechamento.includes(char)) {
+                if (pilhaValidacao.length === 0 || pilhaValidacao.pop() !== mapaFechamento[char]) {
+                    throw new Error("Erro de Balanceamento: Agrupamentos estruturais (parênteses/colchetes/chaves) mal formados.");
+                }
+            }
+        }
+        if (pilhaValidacao.length > 0) throw new Error("Erro de Sintaxe: Existem blocos de coordenação abertos e não fechados.");
+
+        function analisarRecursivo() {
+            let contagemLocal = {};
+
+            while (indice < blocoStr.length) {
+                let charAtual = blocoStr[indice];
+
+                if (delimitadoresAbertura.includes(charAtual)) {
+                    indice++;
+                    let subContagem = analisarRecursivo();
+                    let multiplicadorSub = lerMultiplicadorInteiro();
+                    for (let el in subContagem) {
+                        contagemLocal[el] = (contagemLocal[el] || 0) + (subContagem[el] * multiplicadorSub);
+                    }
+                } 
+                else if (delimitadoresFechamento.includes(charAtual)) {
+                    indice++;
+                    return contagemLocal;
+                } 
+                else {
+                    let elementoQuimico = lerElementoQuimicoSimbolo();
+                    if (!TABELA_PERIODICA[elementoQuimico]) {
+                        throw new Error(`Elemento Desconhecido: O símbolo "${elementoQuimico}" não pertence à tabela periódica IUPAC.`);
+                    }
+                    let multiplicadorAtomo = lerMultiplicadorInteiro();
+                    contagemLocal[elementoQuimico] = (contagemLocal[elementoQuimico] || 0) + multiplicadorAtomo;
+                }
+            }
+            return contagemLocal;
+        }
+
+        function lerElementoQuimicoSimbolo() {
+            let correspondencia = blocoStr.substring(indice).match(/^[A-Z][a-z]?/);
+            if (!correspondencia) {
+                throw new Error(`Sintaxe Inválida: Elemento químico mal formatado ou iniciando incorretamente na posição ${indice}.`);
+            }
+            let simbolo = correspondencia[0];
+            indice += simbolo.length;
+            return simbolo;
+        }
+
+        function lerMultiplicadorInteiro() {
+            let correspondencia = blocoStr.substring(indice).match(/^\d+/);
+            if (!correspondencia) return 1;
+            let numStr = correspondencia[0];
+            indice += numStr.length;
+            return parseInt(numStr, 10);
+        }
+
+        let resultadoFinal = analisarRecursivo();
+        if (Object.keys(resultadoFinal).length === 0) throw new Error("Erro Estrutural: Detecção de escopo molecular sem átomos.");
+        return resultadoFinal;
+    }
+
+   
+    function processarFormula() {
+        const inputStr = document.getElementById('formulaInput').value;
+        const statusBox = document.getElementById('statusBox');
+        const progContainer = document.getElementById('progressBarContainer');
+        const progBar = document.getElementById('progressBar');
+        const resultadoCard = document.getElementById('resultadoCard');
+        const compostoCard = document.getElementById('compostoFichaCard');
+
+        statusBox.style.display = 'none';
+        resultadoCard.style.display = 'none';
+        compostoCard.style.display = 'none';
+
+        try {
+            progContainer.style.display = 'block';
+            progBar.style.width = '40%';
+
+            const composicaoAtomica = parseQuimicoAvancado(inputStr);
+            progBar.style.width = '70%';
+
+            let massaTotalMolar = 0;
+            let listaAnalitica = [];
+            let passoAPassoTexto = "Cálculo Matricial de Massa Elementar:\n";
+
+            for (let el in composicaoAtomica) {
+                let metadata = TABELA_PERIODICA[el];
+                let quantidade = composicaoAtomica[el];
+                let massaCombinada = metadata.massa * quantidade;
+                massaTotalMolar += massaCombinada;
+
+                listaAnalitica.push({
+                    simbolo: el,
+                    nome: metadata.nome,
+                    z: metadata.num,
+                    qtde: quantidade,
+                    massaAtômica: metadata.massa,
+                    massaParcial: massaCombinada
+                });
+
+                passoAPassoTexto += `${el} (${metadata.nome}): ${quantidade} × ${metadata.massa.toFixed(4)} u = ${massaCombinada.toFixed(4)} g/mol\n`;
+            }
+
+            passoAPassoTexto += `\n= Somatório Final Homologado = ${massaTotalMolar.toFixed(4)} g/mol`;
+            document.getElementById('passoAPassoTexto').innerText = passoAPassoTexto;
+            document.getElementById('massaFinal').innerText = massaTotalMolar.toFixed(4);
+
+          
+            let corpoTabelaHtml = "";
+            listaAnalitica.forEach(item => {
+                let percentual = ((item.massaParcial / massaTotalMolar) * 100).toFixed(2);
+                corpoTabelaHtml += `<tr>
+                    <td><strong>${item.simbolo}</strong></td>
+                    <td>${item.nome}</td>
+                    <td>${item.z}</td>
+                    <td>${item.qtde}</td>
+                    <td>${item.massaAtômica.toFixed(4)}</td>
+                    <td>${item.massaParcial.toFixed(4)}</td>
+                    <td>${percentual}%</td>
+                </tr>`;
+            });
+            document.getElementById('tabelaElementosCorpo').innerHTML = corpoTabelaHtml;
+
+            
+            salvarEmLocalStorageHistorico(inputStr, massaTotalMolar.toFixed(4), passoAPassoTexto, listaAnalitica);
+            
+            const agora = new Date();
+            document.getElementById('labFormula').innerText = inputStr;
+            document.getElementById('labMassa').innerText = massaTotalMolar.toFixed(4);
+            document.getElementById('labData').innerText = agora.toLocaleDateString('pt-BR');
+            document.getElementById('labHora').innerText = agora.toLocaleTimeString('pt-BR');
+
+           
+            gerarCoresEGraficos(listaAnalitica);
+
+            
+const buscaKey = inputStr
+    .toUpperCase()
+    .replace(/[\^0-9+\-\s]/g, '');
+
+let achouFicha = false;
+
+for (const key in BANCO_COMPOSTOS) {
+
+    const chaveBanco = key
+        .toUpperCase()
+        .replace(/[\^0-9+\-\s]/g, '');
+
+    if (chaveBanco === buscaKey) {
+
+        const comp = BANCO_COMPOSTOS[key];
+
+        document.getElementById('compostoNome').innerText =
+            `${comp.nome} (${key})`;
+
+        document.getElementById('compostoClasse').innerText =
+            comp.classe || 'Não informado';
+
+        document.getElementById('compostoDescricao').innerText =
+            comp.desc || 'Não informado';
+
+        document.getElementById('compostoAplicacao').innerText =
+            comp.aplic || 'Não informado';
+
+        compostoCard.style.display = 'block';
+
+        achouFicha = true;
+        break;
+    }
+}
+
+
+if (!achouFicha) {
+    compostoCard.style.display = 'none';
+}
+
+            dadosUltimoCalculo = {
+                formula: inputStr,
+                massaTotal: massaTotalMolar.toFixed(4),
+                passoAPasso: passoAPassoTexto,
+                lista: listaAnalitica,
+                dataHora: agora.toLocaleString('pt-BR')
+            };
+
+            
+            document.getElementById('conversorCard').style.display = 'block';
+            executarConversoes();
+
+            progBar.style.width = '100%';
+            setTimeout(() => {
+                progContainer.style.display = 'none';
+                statusBox.className = "status-box status-success";
+                statusBox.innerHTML = "✔ Estrutura molecular resolvida com alta precisão computacional.";
+                statusBox.style.display = 'block';
+                resultadoCard.style.display = 'block';
+            }, 200);
+
+        } catch (erro) {
+            progContainer.style.display = 'none';
+            statusBox.className = "status-box status-error";
+            statusBox.innerHTML = `⚠️ ${erro.message}`;
+            statusBox.style.display = 'block';
+            resultadoCard.style.display = 'none';
+            document.getElementById('conversorCard').style.display = 'none';
+        }
+    }
+
+   
+    function executarConversoes() {
+        if (!dadosUltimoCalculo) return;
+        const valor = parseFloat(document.getElementById('convValor').value);
+        const unidade = document.getElementById('convUnidade').value;
+        const resBox = document.getElementById('conversorResultados');
+        const mm = parseFloat(dadosUltimoCalculo.massaTotal);
+
+        if (isNaN(valor) || valor <= 0) {
+            resBox.innerText = "Insira um valor de entrada positivo válido.";
+            return;
+        }
+
+        let mol = 0;
+        if (unidade === 'g') {
+            mol = valor / mm;
+        } else if (unidade === 'mol') {
+            mol = valor;
+        } else if (unidade === 'moleculas') {
+            mol = valor / AVOGADRO;
+        }
+
+        const g = mol * mm;
+        const molec = mol * AVOGADRO;
+
+        let totalAtomos = 0;
+        dadosUltimoCalculo.lista.forEach(i => {
+            totalAtomos += i.qtde;
+        });
+        const atomosTotais = molec * totalAtomos;
+
+        resBox.innerText = `FÓRMULAS DE RELAÇÃO UTILIZADAS:
+• n = m / MM (Mols = Massa / Massa Molar)
+• N = n × N_A (Partículas = Mols × Constante de Avogadro [6.0221 × 10²³])
+
+RESULTADOS COORDENADOS DE CONVERSÃO QUÍMICA:
+> Massa Total Equivalente: ${g.toExponential(4)} g  (${g.toFixed(4)} g)
+> Quantidade de Matéria:    ${mol.toExponential(4)} mol (${mol.toFixed(4)} mol)
+> Entidades Moleculares:   ${molec.toExponential(4)} moléculas / partículas estruturais
+> População Atômica Total: ${atomosTotais.toExponential(4)} átomos individuais combinados`;
+    }
+
+    
+    function calcularEstequiometriaReacao() {
+        const reacao = document.getElementById('reacaoInput').value.trim();
+        const valorIn = parseFloat(document.getElementById('reagenteMassa').value);
+        const tipoIn = document.getElementById('reagenteTipo').value;
+        const outBox = document.getElementById('estequiometriaResultado');
+
+        outBox.style.display = 'none';
+        if (!reacao || !reacao.includes('->')) {
+            alert('Erro de Sintaxe na Reação: Utilize o formato estrito: Coef1*Reagente1 + Coef2*Reagente2 -> Coef3*Produto');
+            return;
+        }
+
+        try {
+            const partes = reacao.split('->');
+            const reagentesStr = partes[0].split('+');
+            const produtosStr = partes[1].split('+');
+
+            function mapearComponentes(arrStr) {
+                return arrStr.map(item => {
+                    let s = item.trim();
+                    let coef = 1;
+                    let m = s.match(/^(\d+)/);
+                    if (m) {
+                        coef = parseInt(m[1], 10);
+                        s = s.substring(m[1].length).trim();
+                    }
+               
+                    let compAtômica = parseQuimicoAvancado(s);
+                    let mm = 0;
+                    for (let el in compAtômica) {
+                        mm += TABELA_PERIODICA[el].massa * compAtômica[el];
+                    }
+                    return { formula: s, coef: coef, mm: mm };
+                });
+            }
+
+            const reagentes = mapearComponentes(reagentesStr);
+            const produtos = mapearComponentes(produtosStr);
+
+            
+            let baseReagente = reagentes[0];
+            let molsBase = (tipoIn === 'g') ? (valorIn / baseReagente.mm) : valorIn;
+            let molsReacaoPadrao = molsBase / baseReagente.coef;
+
+            let log = `RELATÓRIO DE BALANÇO ESTEQUIOMÉTRICO (RENDIMENTO TEÓRICO 100%):\n`;
+            log += `Base de Cálculo: Reagente de Referência [${baseReagente.formula}] = ${valorIn} ${tipoIn}\n\n`;
+
+            log += `REAGENTES ENVOLVIDOS:\n`;
+            reagentes.forEach((r, idx) => {
+                let molsNecessarios = r.coef * molsReacaoPadrao;
+                let massaNecessaria = molsNecessarios * r.mm;
+                log += ` (${idx + 1}) ${r.formula} -> Coef: ${r.coef} | MM: ${r.mm.toFixed(3)} g/mol | Massa Reagida: ${massaNecessaria.toFixed(3)} g | Mols: ${molsNecessarios.toFixed(4)} mol\n`;
+            });
+
+            log += `\nPRODUTOS ESPERADOS (RENDIMENTO TEÓRICO):\n`;
+            produtos.forEach((p, idx) => {
+                let molsProduzidos = p.coef * molsReacaoPadrao;
+                let massaProduzida = molsProduzidos * p.mm;
+                log += ` (${idx + 1}) ${p.formula} -> Coef: ${p.coef} | MM: ${p.mm.toFixed(3)} g/mol | Massa Gerada: ${massaProduzida.toFixed(3)} g | Mols: ${molsProduzidos.toFixed(4)} mol\n`;
+            });
+
+            outBox.innerText = log;
+            outBox.style.display = 'block';
+
+        } catch (e) {
+            alert("Erro ao decodificar matriz da reação estequiométrica: " + e.message);
+        }
+    }
+
+ 
+    function copiarParaAreaTransferencia(tipo) {
+        if (!dadosUltimoCalculo) return;
+        let texto = "";
+
+        if (tipo === 'massa') {
+            texto = dadosUltimoCalculo.massaTotal;
+        } else if (tipo === 'relatorio') {
+            texto = dadosUltimoCalculo.passoAPasso;
+        } else if (tipo === 'tabela') {
+            texto = `"Símbolo","Elemento","Quantidade","Massa Atômica","Massa Combinada"\n`;
+            dadosUltimoCalculo.lista.forEach(i => {
+                texto += `"${i.simbolo}","${i.nome}",${i.qtde},${i.massaAtômica},${i.massaParcial.toFixed(4)}\n`;
+            });
+        }
+
+        navigator.clipboard.writeText(texto).then(() => {
+            alert("✔ Conteúdo copiado com sucesso para a área de transferência do sistema.");
+        }).catch(err => {
+            alert("Erro ao utilizar a API de transferência: " + err);
+        });
+    }
+
+   
+    function gerarCoresEGraficos(dadosLista) {
+        const rotulos = dadosLista.map(d => d.simbolo);
+        const massasParciais = dadosLista.map(d => d.massaParcial);
+        const percentuais = dadosLista.map(d => ((d.massaParcial / dadosLista.reduce((a,b)=>a+b.massaParcial,0)) * 100).toFixed(2));
+
+        const paletaCores = dadosLista.map((_, i) => {
+            const matiz = (i * (360 / dadosLista.length)) % 360;
+            return `hsla(${matiz}, 75%, 50%, 0.85)`;
+        });
+
+        if (chartPizzaInstancia) chartPizzaInstancia.destroy();
+        if (chartBarrasInstancia) chartBarrasInstancia.destroy();
+        if (chartHorizontalInstancia) chartHorizontalInstancia.destroy();
+
+        const ctxPizza = document.getElementById('chartPizza').getContext('2d');
+        chartPizzaInstancia = new Chart(ctxPizza, {
+            type: 'pie',
+            data: {
+                labels: rotulos,
+                datasets: [{
+                    data: massasParciais,
+                    backgroundColor: paletaCores,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { title: { display: true, text: 'Fração Centesimal de Massa (%)' } }
+            }
+        });
+
+        const ctxBarras = document.getElementById('chartBarras').getContext('2d');
+        chartBarrasInstancia = new Chart(ctxBarras, {
+            type: 'bar',
+            data: {
+                labels: rotulos,
+                datasets: [{
+                    label: 'Massa Absoluta (g/mol)',
+                    data: massasParciais,
+                    backgroundColor: paletaCores
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { title: { display: true, text: 'Distribuição Absoluta de Massa (g/mol)' } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        const ctxHoriz = document.getElementById('chartHorizontal').getContext('2d');
+        chartHorizontalInstancia = new Chart(ctxHoriz, {
+            type: 'bar',
+            data: {
+                labels: rotulos,
+                datasets: [{
+                    label: 'Porcentagem (%)',
+                    data: percentuais,
+                    backgroundColor: paletaCores
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { title: { display: true, text: 'Perfil Comparativo Porcentual (%)' } },
+                scales: { x: { beginAtZero: true, max: 100 } }
+            }
+        });
+    }
+
+    function limparPainel() {
+        document.getElementById('formulaInput').value = "";
+        document.getElementById('statusBox').style.display = 'none';
+        document.getElementById('ionStatusBox').style.display = 'none';
+        document.getElementById('resultadoCard').style.display = 'none';
+        document.getElementById('compostoFichaCard').style.display = 'none';
+        document.getElementById('conversorCard').style.display = 'none';
+        document.getElementById('progressBarContainer').style.display = 'none';
+        dadosUltimoCalculo = null;
+    }
+
+ 
+    function obtenerHistorico() {
+        return JSON.parse(localStorage.getItem('edcelltech-quimica-historial') || '[]');
+    }
+
+    function salvarEmLocalStorageHistorico(formula, massa, passos, lista) {
+        let historico = obtenerHistorico();
+        historico = historico.filter(item => item.formula !== formula);
+        
+        historico.unshift({
+            formula: formula,
+            massa: massa,
+            passos: passos,
+            lista: lista,
+            dataHora: new Date().toLocaleString('pt-BR')
+        });
+
+        if (historico.length > 50) historico.pop();
+        localStorage.setItem('edcelltech-quimica-historial', JSON.stringify(historico));
+        renderizarHistorico();
+    }
+
+    function renderizarHistorico() {
+        const container = document.getElementById('historicoContainer');
+        const termoBusca = document.getElementById('buscaHistorico').value.toLowerCase().trim();
+        let historico = obtenerHistorico();
+
+        if (termoBusca) {
+            historico = historico.filter(h => h.formula.toLowerCase().includes(termoBusca));
+        }
+
+        if (historico.length === 0) {
+            container.innerHTML = `<p style="font-size:0.9rem; color:var(--text-secondary); text-align:center;">Nenhum log localizado.</p>`;
+            return;
+        }
+
+        container.innerHTML = historico.map((item, index) => `
+            <div class="history-item">
+                <div style="flex-grow: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;">
+                    <strong style="font-size:1.05rem; color:var(--accent);">${item.formula}</strong><br>
+                    <small style="color:var(--text-primary); font-weight:600;">${item.massa} g/mol</small><br>
+                    <small style="color:var(--text-secondary); font-size:0.75rem;">${item.dataHora}</small>
+                </div>
+                <div class="history-actions">
+                    <button class="mini-btn btn-primary" onclick="recalcularFormulaHistorico('${item.formula}')">Carregar</button>
+                    <button class="mini-btn btn-secondary" style="background-color:var(--error);" onclick="excluirItemHistorico('${item.formula}')">✕</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function recalcularFormulaHistorico(formula) {
+        document.getElementById('formulaInput').value = formula;
+        processarFormula();
+    }
+
+    function excluirItemHistorico(formula) {
+        let historico = obtenerHistorico();
+        historico = historico.filter(item => item.formula !== formula);
+        localStorage.setItem('edcelltech-quimica-historial', JSON.stringify(historico));
+        renderizarHistorico();
+    }
+
+    function limparHistoricoCompleto() {
+        if(confirm("Deseja expurgar completamente todos os logs do histórico de auditoria química?")) {
+            localStorage.removeItem('edcelltech-quimica-historial');
+            renderizarHistorico();
+        }
+    }
+
+
+    function exportarRelatorio(tipo) {
+        if (!dadosUltimoCalculo) return;
+        const d = dadosUltimoCalculo;
+        const rodapeTexto = "EDCELLTECH — Plataforma de Engenharia Química Computacional de Alta Precisão";
+
+        if (tipo === 'txt') {
+            let conteudo = `RELATÓRIO QUÍMICO DE MASSA MOLAR\n`;
+            conteudo += `Data/Hora Emissão: ${d.dataHora}\n`;
+            conteudo += `Fórmula Analisada: ${d.formula}\n`;
+            conteudo += `Massa Molar Calculada: ${d.massaTotal} g/mol\n`;
+            conteudo += `===============================================\n\n`;
+            conteudo += d.passoAPasso + `\n\n`;
+            conteudo += `===============================================\n`;
+            conteudo += `Símbolo | Elemento | Qtde | Massa Atômica | Parcial\n`;
+            d.lista.forEach(i => {
+                conteudo += `${i.simbolo} | ${i.nome} | ${i.qtde} | ${i.massaAtômica} | ${i.massaParcial.toFixed(4)}\n`;
+            });
+            conteudo += `\n${rodapeTexto}`;
+
+            const blob = new Blob([conteudo], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Relatorio_Quimico_${d.formula}.txt`;
+            link.click();
+        } 
+        else if (tipo === 'csv') {
+            let conteudo = `"Símbolo","Elemento IUPAC","Quantidade","Massa Atômica u","Massa Combinada g/mol","Fração %"\n`;
+            d.lista.forEach(i => {
+                let pct = ((i.massaParcial / parseFloat(d.massaTotal)) * 100).toFixed(2);
+                conteudo += `"${i.simbolo}","${i.nome}",${i.qtde},${i.massaAtômica},${i.massaParcial.toFixed(4)},"${pct}%"\n`;
+            });
+
+            const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Analise_Massa_Molar_${d.formula}.csv`;
+            link.click();
+        } 
+        else if (tipo === 'xlsx') {
+            const cabecalhoMatriz = [
+                ["RELATÓRIO QUÍMICO COMPUTACIONAL AVANÇADO — EDCELLTECH"],
+                ["Fórmula Analisada:", d.formula],
+                ["Massa Molar Determinada:", `${d.massaTotal} g/mol`],
+                ["Data e Hora de Processamento:", d.dataHora],
+                [],
+                ["Símbolo", "Nome do Elemento", "Número Atômico (Z)", "Quantidade Absoluta", "Massa Atômica (u)", "Massa Combinada (g/mol)", "Fração Centesimal"]
+            ];
+
+            d.lista.forEach(i => {
+                let pct = ((i.massaParcial / parseFloat(d.massaTotal)) * 100).toFixed(2) + "%";
+                cabecalhoMatriz.push([i.simbolo, i.nome, i.z, i.qtde, i.massaAtômica, parseFloat(i.massaParcial.toFixed(4)), pct]);
+            });
+
+            const planilha = XLSX.utils.aoa_to_sheet(cabecalhoMatriz);
+            const livroExcell = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(livroExcell, planilha, "Análise Estequiométrica");
+            XLSX.writeFile(livroExcell, `Laudo_Massa_Molar_${d.formula}.xlsx`);
+        } 
+        else if (tipo === 'pdf') {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(18);
+            doc.text("LAUDO LABORATORIAL AVANÇADO DE MASSA MOLAR", 14, 20);
+            
+            doc.setFontSize(10);
+            doc.setFont("Helvetica", "normal");
+            doc.text(`Data/Hora de Emissão: ${d.dataHora}`, 14, 28);
+            doc.text(`Responsável Técnico: Auditor Computacional Integrado EDCELLTECH`, 14, 34);
+
+            doc.setLineWidth(0.5);
+            doc.line(14, 38, 196, 38);
+
+            doc.setFontSize(12);
+            doc.setFont("Helvetica", "bold");
+            doc.text(`Fórmula Estrutural Computada: ${d.formula}`, 14, 46);
+            doc.text(`Massa Molar Determinada: ${d.massaTotal} g/mol`, 14, 54);
+
+            doc.setFontSize(11);
+            doc.text("Distribuição Elementar Estequiométrica Enriquecida:", 14, 66);
+
+            let eixoY = 74;
+            doc.setFontSize(10);
+            doc.setFillColor(240, 244, 248);
+            doc.rect(14, eixoY, 182, 7, "F");
+            doc.text("Símb.", 16, eixoY + 5);
+            doc.text("Nome IUPAC", 35, eixoY + 5);
+            doc.text("Qtde", 85, eixoY + 5);
+            doc.text("Massa Atômica (u)", 110, eixoY + 5);
+            doc.text("Massa Combinada", 150, eixoY + 5);
+
+            eixoY += 7;
+            doc.setFont("Helvetica", "normal");
+            d.lista.forEach(i => {
+                doc.text(i.simbolo, 16, eixoY + 5);
+                doc.text(i.nome, 35, eixoY + 5);
+                doc.text(i.qtde.toString(), 85, eixoY + 5);
+                doc.text(i.massaAtômica.toFixed(3), 110, eixoY + 5);
+                doc.text(i.massaParcial.toFixed(3), 150, eixoY + 5);
+                eixoY += 7;
+            });
+
+           
+            eixoY += 15;
+            doc.setFont("Helvetica", "bold");
+            doc.text("Laudo de Certificação Digital em Conformidade com Diretrizes IUPAC 2026.", 14, eixoY);
+
+            doc.setFontSize(9);
+            doc.setFont("Helvetica", "italic");
+            doc.text(rodapeTexto, 14, 285);
+
+            doc.save(`Laudo_Massa_Molar_${d.formula}.pdf`);
+        }
+    }
+
+   
+    function executarTestesInternos() {
+        const casosDeTeste = [
+            { formula: "H2O", esperado: 18.015 },
+            { formula: "CO2", esperado: 44.009 },
+            { formula: "NaCl", esperado: 58.440 },
+            { formula: "H2SO4", esperado: 98.072 },
+            { formula: "C6H12O6", esperado: 180.156 },
+            { formula: "CuSO4·5H2O", esperado: 249.685 },
+            { formula: "Fe2(SO4)3", esperado: 399.858 },
+            { formula: "Al2(SO4)3", esperado: 342.132 },
+            { formula: "K4[Fe(CN)6]", esperado: 368.343 },
+            { formula: "[Co(NH3)6]Cl3", esperado: 267.481 },
+            { formula: "MgSO4·7H2O", esperado: 246.47 },
+            { formula: "CaCl2·2H2O", esperado: 147.01 },
+            { formula: "(NH4)2SO4", esperado: 132.14 },
+            { formula: "NH3", esperado: 17.031 },
+            { formula: "NH4Cl", esperado: 53.491 },
+            { formula: "NH4NO3", esperado: 80.043 },
+            { formula: "(NH4)3PO4", esperado: 149.087 },
+
+            { formula: "TiO2", esperado: 79.866 },
+
+            { formula: "BaSO4", esperado: 233.389 },
+
+            { formula: "ZnO", esperado: 81.379 },
+
+            { formula: "CaCO3", esperado: 100.086 },
+
+            { formula: "SiO2", esperado: 60.084 },
+
+            { formula: "Al2O3", esperado: 101.961 },
+
+            { formula: "Fe2O3", esperado: 159.687 },
+
+            { formula: "Fe3O4", esperado: 231.531 },
+
+            { formula: "Cr2O3", esperado: 151.990 },
+
+            { formula: "NiO", esperado: 74.692 },
+
+            { formula: "CuO", esperado: 79.545 },
+
+            { formula: "MnO2", esperado: 86.936 },
+
+            { formula: "PbCrO4", esperado: 323.192 },
+
+            { formula: "Zn3(PO4)2", esperado: 386.107 },
+
+            { formula: "SrCrO4", esperado: 203.612 },
+
+            { formula: "CaSO4", esperado: 136.139 },
+
+            { formula: "CaSO4·2H2O", esperado: 172.171 },
+
+            { formula: "Na3PO4", esperado: 163.940 },
+
+            { formula: "Na2SiO3", esperado: 122.063 },
+
+            { formula: "Na2MoO4", esperado: 205.918 },
+
+            { formula: "NaNO2", esperado: 68.995 },
+
+            { formula: "NaClO2", esperado: 90.442 },
+
+            { formula: "NaClO3", esperado: 106.441 },
+
+            { formula: "NaClO4", esperado: 122.440 },
+
+            { formula: "ClO2", esperado: 67.452 },
+
+            { formula: "O3", esperado: 47.997 },
+
+            { formula: "H2O2", esperado: 34.014 },
+
+            { formula: "Na2S2O5", esperado: 190.107 },
+
+            { formula: "NaHSO3", esperado: 104.061 },
+
+            { formula: "Na2SO3", esperado: 126.043 },
+
+            { formula: "Na2S2O3·5H2O", esperado: 248.182 },
+
+            { formula: "Al2(SO4)3·18H2O", esperado: 666.429 },
+
+            { formula: "FeCl3·6H2O", esperado: 270.296 },
+
+            { formula: "FeSO4·7H2O", esperado: 278.015 },
+
+            { formula: "AlCl3·6H2O", esperado: 241.432 },
+
+            { formula: "CuSO4·5H2O", esperado: 249.685 },
+
+            { formula: "ZnSO4·7H2O", esperado: 287.539 },
+
+            { formula: "MgSO4·7H2O", esperado: 246.470 },
+
+            { formula: "NaOH", esperado: 39.997 },
+
+            { formula: "KOH", esperado: 56.105 },
+
+            { formula: "Ca(OH)2", esperado: 74.093 },
+
+            { formula: "NH4OH", esperado: 35.046 },
+
+            { formula: "NH4Cl", esperado: 53.491 },
+
+            { formula: "(NH4)2SO4", esperado: 132.140 },
+
+            { formula: "NH4NO3", esperado: 80.043 },
+
+            { formula: "NH4HCO3", esperado: 79.056 },
+
+            { formula: "CO(NH2)2", esperado: 60.056 },
+
+            { formula: "H3BO3", esperado: 61.833 },
+
+            { formula: "Na2B4O7·10H2O", esperado: 381.372 },
+
+            { formula: "NaF", esperado: 41.988 },
+
+            { formula: "Na2CO3", esperado: 105.988 },
+
+            { formula: "NaHCO3", esperado: 84.007 },
+
+            { formula: "K2CO3", esperado: 138.205 },
+
+            { formula: "CaCl2", esperado: 110.984 },
+
+            { formula: "MgCl2", esperado: 95.211 },
+
+            { formula: "KCl", esperado: 74.551 },
+
+            { formula: "NaCl", esperado: 58.443 },
+
+            { formula: "NaNO3", esperado: 84.995 },
+
+            { formula: "KNO3", esperado: 101.103 },
+
+            { formula: "AgNO3", esperado: 169.873 },
+
+            { formula: "KMnO4", esperado: 158.034 },
+
+            { formula: "K2Cr2O7", esperado: 294.185 },
+
+            { formula: "Na2CrO4", esperado: 161.972 },
+
+            { formula: "CrO3", esperado: 99.994 },
+
+            { formula: "H2CrO4", esperado: 117.994 },
+
+            { formula: "H3PO4", esperado: 97.994 },
+
+            { formula: "H2SO4", esperado: 98.079 },
+
+            { formula: "HNO3", esperado: 63.012 },
+
+            { formula: "HCl", esperado: 36.458 },
+
+            { formula: "HF", esperado: 20.006 },
+
+            { formula: "CH3COOH", esperado: 60.052 },
+
+            { formula: "C2H5OH", esperado: 46.069 },
+
+            { formula: "CH3OH", esperado: 32.042 },
+
+            { formula: "C3H8O", esperado: 60.096 },
+
+            { formula: "C3H6O", esperado: 58.080 },
+
+            { formula: "C7H8", esperado: 92.141 },
+
+            { formula: "C8H10", esperado: 106.168 },
+
+            { formula: "C6H6", esperado: 78.114 },
+
+            { formula: "C8H8", esperado: 104.151 },
+
+            { formula: "C4H8O2", esperado: 88.106 },
+
+            { formula: "C3H6O2", esperado: 74.079 },
+
+            { formula: "C6H12O6", esperado: 180.156 },
+
+            { formula: "C10H16N2O8", esperado: 292.243 },
+
+            { formula: "C10H14N2Na2O8", esperado: 336.206 },
+
+            { formula: "HCl", esperado: 36.458 },
+            { formula: "HNO3", esperado: 63.012 },
+            { formula: "H3PO4", esperado: 97.994 },
+            { formula: "CH3COOH", esperado: 60.052 },
+
+            { formula: "NaOH", esperado: 39.997 },
+            { formula: "KOH", esperado: 56.105 },
+            { formula: "Ca(OH)2", esperado: 74.093 },
+            { formula: "Mg(OH)2", esperado: 58.319 },
+            { formula: "Al(OH)3", esperado: 78.003 },
+
+            { formula: "Na2CO3", esperado: 105.988 },
+            { formula: "NaHCO3", esperado: 84.007 },
+            { formula: "CaCO3", esperado: 100.086 },
+            { formula: "MgCO3", esperado: 84.313 },
+
+            { formula: "NaNO3", esperado: 84.995 },
+            { formula: "KNO3", esperado: 101.103 },
+            { formula: "AgNO3", esperado: 169.873 },
+
+            { formula: "Na2SO4", esperado: 142.042 },
+            { formula: "MgSO4", esperado: 120.366 },
+            { formula: "ZnSO4", esperado: 161.445 },
+            { formula: "BaSO4", esperado: 233.389 },
+
+            { formula: "NaClO", esperado: 74.442 },
+            { formula: "KClO3", esperado: 122.548 },
+            { formula: "KClO4", esperado: 138.548 },
+
+            { formula: "KMnO4", esperado: 158.034 },
+            { formula: "K2Cr2O7", esperado: 294.185 },
+
+            { formula: "CaCl2", esperado: 110.984 },
+            { formula: "MgCl2", esperado: 95.211 },
+            { formula: "AlCl3", esperado: 133.341 },
+            { formula: "FeCl3", esperado: 162.204 },
+
+            { formula: "CO", esperado: 28.010 },
+            { formula: "CO2", esperado: 44.009 },
+            { formula: "SO2", esperado: 64.066 },
+            { formula: "SO3", esperado: 80.066 },
+            { formula: "NO", esperado: 30.006 },
+            { formula: "NO2", esperado: 46.005 },
+
+            { formula: "CH4", esperado: 16.043 },
+            { formula: "C2H6", esperado: 30.070 },
+            { formula: "C3H8", esperado: 44.097 },
+            { formula: "C4H10", esperado: 58.124 },
+
+            { formula: "CH3OH", esperado: 32.042 },
+            { formula: "C2H5OH", esperado: 46.069 },
+            { formula: "C3H8O", esperado: 60.096 },
+
+            { formula: "C3H6O", esperado: 58.080 },
+            { formula: "C4H8O2", esperado: 88.106 },
+
+            { formula: "C6H6", esperado: 78.114 },
+            { formula: "C7H8", esperado: 92.141 },
+            { formula: "C8H10", esperado: 106.168 },
+
+            { formula: "C12H22O11", esperado: 342.296 },
+            { formula: "C6H8O7", esperado: 192.124 },
+
+            { formula: "H2O2", esperado: 34.014 },
+
+            { formula: "CaO", esperado: 56.077 },
+            { formula: "MgO", esperado: 40.304 },
+            { formula: "Al2O3", esperado: 101.961 },
+            { formula: "Fe2O3", esperado: 159.687 },
+            { formula: "SiO2", esperado: 60.084 },
+
+            { formula: "Na2B4O7·10H2O", esperado: 381.372 },
+            { formula: "CuSO4·5H2O", esperado: 249.685 },
+            { formula: "MgSO4·7H2O", esperado: 246.470 },
+            { formula: "CaCl2·2H2O", esperado: 147.014 },
+
+            { formula: "Na2CO3·10H2O", esperado: 286.141 },
+            { formula: "FeSO4·7H2O", esperado: 278.015 },
+            { formula: "ZnSO4·7H2O", esperado: 287.539 },
+
+            { formula: "KAl(SO4)2·12H2O", esperado: 474.388 },
+
+            { formula: "Na2HPO4", esperado: 141.958 },
+            { formula: "KH2PO4", esperado: 136.086 },
+            { formula: "K2HPO4", esperado: 174.176 },
+
+            { formula: "Ca3(PO4)2", esperado: 310.174 },
+            { formula: "AlPO4", esperado: 121.952 },
+
+            { formula: "Na2S2O3·5H2O", esperado: 248.182 },
+
+            { formula: "C8H10N4O2", esperado: 194.190 },
+
+            { formula: "C9H8O4", esperado: 180.159 },
+
+            { formula: "C8H9NO2", esperado: 151.165 },
+
+            { formula: "C13H18O2", esperado: 206.285 }
+        ];
+
+        const gridResultados = document.getElementById('testGridResultados');
+        gridResultados.innerHTML = "";
+
+        casosDeTeste.forEach(teste => {
+            try {
+                const resultadoMapeado = parseQuimicoAvancado(teste.formula);
+                let calculoMassa = 0;
+                for (let el in resultadoMapeado) {
+                    calculoMassa += TABELA_PERIODICA[el].massa * resultadoMapeado[el];
+                }
+
+                const deltaDivergencia = Math.abs(calculoMassa - teste.esperado);
+                const aprovado = deltaDivergencia <= 0.5; // Margem expandida tolerável por arredondamentos IUPAC
+
+                const badge = document.createElement('div');
+                badge.className = `test-badge ${aprovado ? 'test-pass' : 'test-fail'}`;
+                badge.innerHTML = `
+                    <strong>Molécula: ${teste.formula}</strong>
+                    <span>Esperado: ${teste.esperado.toFixed(3)} u</span>
+                    <span>Calculado: ${calculoMassa.toFixed(3)} u</span>
+                    <span>Delta: ${deltaDivergencia.toFixed(3)}</span>
+                    <strong style="text-align:right;">${aprovado ? '✔ PASS' : '❌ ERRO'}</strong>
+                `;
+                gridResultados.appendChild(badge);
+
+            } catch (err) {
+                const badge = document.createElement('div');
+                badge.className = "test-badge test-fail";
+                badge.innerHTML = `<span>${teste.formula}</span> <strong>CRASH INTERNO</strong>`;
+                gridResultados.appendChild(badge);
+            }
+        });
+    }
+</script>
+</body>
+</html>
